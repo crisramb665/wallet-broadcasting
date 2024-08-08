@@ -1,0 +1,24 @@
+{
+    "dependencies": {
+        "@josekeyper/alfdrop-sequences-common": "file:../../../../../alfdrop-sequences-common",
+        "axios": "1.6.8",
+        "ethers": "6.6.4"
+    },
+    "type": "module",
+    "scripts": {
+        "build": "docker build --no-cache -t berachain_bex -f dockerfile .",
+        "mount": "rimraf dist && tsc",
+        "unmount": "rimraf dist *.tsbuildinfo"
+    },
+    "devDependencies": {
+        "@types/node": "^20.12.7",
+        "@typescript-eslint/eslint-plugin": "^5.38.1",
+        "eslint": "8.21.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "prettier": "^2.7.0",
+        "ts-node": "^10.9.1",
+        "tslint": "^6.1.3",
+        "typescript": "^5.4.5"
+    }
+}
