@@ -1,35 +1,35 @@
-import { ethers, Contract, JsonRpcProvider, Wallet } from 'ethers'
+/** npm imports */
+import { ethers, Contract, JsonRpcProvider, Wallet, parseEther } from 'ethers'
 
+/** local imports */
+import { generalSettings, contractExecSettings } from './config/settings.js'
+import { signAndExec } from './helper/signAndExec.js'
+
+/** ABIs */
 import ERC721_TOKEN_CONTRACT_ABI from './ABIs/ERC721_TOKEN_CONTRACT_ABI.js'
 import ERC20_TOKEN_CONTRACT_ABI from './ABIs/ERC20_TOKEN_CONTRACT_ABI.js'
 import WETH_ABI from './ABIs/WETH_ABI.js'
 import CORE_ABI from './ABIs/CORE_ABI.js'
-import { signAndExec } from './helper/signAndExec.js'
 
 const transferErc20 = async () => {
-  const workWallet = '0xf44fD92282fF41Ef29D85d7259A4378B8c482ED8'
-  const myWallet = '0x458C8008E2415d9b012165d951fD1C80855d2233'
-  const pk = ''
-  // const rpcUrl = ''
-  const rpcUrl = 'https://linea.decubate.com'
-  // const chainId = 8453
-  const chainId = 59144
+  const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId } = generalSettings
+  const { contractAddress, contractName } = contractExecSettings
+  console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
+  console.log('Contract parameters: ', { contractName, contractAddress })
 
   const provider = new JsonRpcProvider(rpcUrl)
-  const signer = new Wallet(pk, provider)
+  const signer = new Wallet(senderPk, provider)
 
-  const baseErc20 = '0x4200000000000000000000000000000000000006'
-
-  const baseErc20Contract = new Contract(baseErc20, WETH_ABI, provider)
-  const balance = await baseErc20Contract.balanceOf(workWallet)
+  const baseErc20Contract = new Contract(contractAddress, WETH_ABI, provider)
+  const balance = await baseErc20Contract.balanceOf(senderWalletAddress)
   console.log('current balance is: ', balance)
 
-  const estimatedGasLimit = await baseErc20Contract.transfer.estimateGas(myWallet, balance)
-  const txUnsigned = await baseErc20Contract.transfer.populateTransaction(myWallet, balance)
+  const estimatedGasLimit = await baseErc20Contract.transfer.estimateGas(receiverWalletAddress, balance)
+  const txUnsigned = await baseErc20Contract.transfer.populateTransaction(receiverWalletAddress, balance)
   txUnsigned.chainId = BigInt(chainId)
   txUnsigned.gasLimit = estimatedGasLimit
   txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
-  txUnsigned.nonce = await provider.getTransactionCount(workWallet)
+  txUnsigned.nonce = await provider.getTransactionCount(receiverWalletAddress)
   console.log(`tx unsigned: ${txUnsigned}`)
 
   const txSigned = await signer.signTransaction(txUnsigned)
@@ -42,68 +42,63 @@ const transferErc20 = async () => {
 }
 
 const transferNative = async () => {
-  const workWallet = '0xf44fD92282fF41Ef29D85d7259A4378B8c482ED8'
-  const myWallet = '0x458C8008E2415d9b012165d951fD1C80855d2233'
-  const pk = ''
-  // const rpcUrl = ''
-  // const rpcUrl = 'https://linea.decubate.com'
-  // const rpcUrl = 'https://rpc.envelop.is/blast'
-  const rpcUrl = ''
+  const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId } = generalSettings
+  const { contractAddress, contractName, amount } = contractExecSettings
+  console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
+  console.log('Contract parameters: ', { contractName, contractAddress, amount })
+
+  const processedAmount = parseEther(amount)
 
   const provider = new JsonRpcProvider(rpcUrl)
-  const signer = new Wallet(pk, provider)
+  const signer = new Wallet(senderPk, provider)
 
-  const balance = await provider.getBalance(workWallet)
+  const balance = await provider.getBalance(senderWalletAddress)
   console.log('current balance is: ', balance)
 
   const tx = await signer.sendTransaction({
-    to: myWallet,
-    value: BigInt(1966905000000000)
+    to: receiverWalletAddress,
+    value: processedAmount
   })
 
   console.log('hash', tx.hash)
 }
 
 const nftBalance = async () => {
-  const workWallet = '0xf44fD92282fF41Ef29D85d7259A4378B8c482ED8'
-  const myWallet = '0x458C8008E2415d9b012165d951fD1C80855d2233'
-  const rpcUrl = ''
+  const { senderWalletAddress, rpcUrl } = generalSettings
+  const { contractName, contractAddress } = contractExecSettings
+  console.log('General parameters: ', { senderWalletAddress })
+  console.log('Contract parameters: ', { contractName, contractAddress })
+
   const provider = new JsonRpcProvider(rpcUrl)
 
-  const nftContract = new Contract('0x7daC480d20f322D2ef108A59A465CCb5749371c4', ERC721_TOKEN_CONTRACT_ABI, provider)
-  const balance = await nftContract.balanceOf(workWallet)
+  const nftContract = new Contract(contractAddress, ERC721_TOKEN_CONTRACT_ABI, provider)
+  const balance = await nftContract.balanceOf(senderWalletAddress)
   console.log('nft balance', balance)
 }
 
 const approveERC20 = async () => {
-  const myWallet = '0x458C8008E2415d9b012165d951fD1C80855d2233'
-  const workWallet = '0xf44fD92282fF41Ef29D85d7259A4378B8c482ED8'
-  const pkWorkWallet = ''
+  const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId, spenderAddress } = generalSettings
+  if (!spenderAddress) throw new Error('No spender address provided')
 
-  const rpcUrl = 'https://artio.rpc.berachain.com/'
+  const { contractAddress, contractName } = contractExecSettings
+  console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
+  console.log('Contract parameters: ', { contractName, contractAddress })
+
   const provider = new JsonRpcProvider(rpcUrl)
-  const signer = new Wallet(pkWorkWallet, provider)
+  const signer = new Wallet(senderPk, provider)
 
-  const tokenBerachain = new Contract(
-    '0x6581e59A1C8dA66eD0D313a0d4029DcE2F746Cc5', // usdc
-    ERC20_TOKEN_CONTRACT_ABI,
-    provider
-  )
-  const balance = await tokenBerachain.balanceOf(workWallet)
-
+  const token = new Contract(contractAddress, ERC20_TOKEN_CONTRACT_ABI, provider)
+  const balance = await token.balanceOf(senderWalletAddress)
   console.log({ balance })
 
-  const berachainBex = '0x0D5862FDBDD12490F9B4DE54C236CFF63B038074'
-
-  const allowance1 = await tokenBerachain.allowance(workWallet, berachainBex)
+  const allowance1 = await token.allowance(senderWalletAddress, spenderAddress)
   console.log({ allowance1 })
 
-  //   const estimatedGasLimit = await tokenBerachain.approve.estimateGas(myWallet, balance);
-  const txUnsigned = await tokenBerachain.approve.populateTransaction(berachainBex, balance)
-  txUnsigned.chainId = BigInt(80085)
+  const txUnsigned = await token.approve.populateTransaction(spenderAddress, balance)
+  txUnsigned.chainId = BigInt(chainId)
   txUnsigned.gasLimit = BigInt(30000)
   txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
-  txUnsigned.nonce = await provider.getTransactionCount(workWallet)
+  txUnsigned.nonce = await provider.getTransactionCount(senderWalletAddress)
   console.log({ txUnsigned })
 
   const txSigned = await signer.signTransaction(txUnsigned)
@@ -113,20 +108,29 @@ const approveERC20 = async () => {
   const receipt = await submittedTx.wait()
   const txHash = ethers.keccak256(txSigned)
 
-  const allowance2 = await tokenBerachain.allowance(workWallet, berachainBex)
+  const allowance2 = await token.allowance(senderWalletAddress, spenderAddress)
   console.log({ txHash, receipt, allowance2 })
 }
 
+//! NEED TO WORK IN DEEP OVER THIS METHOD
 const contractInteraction = async () => {
-  const myWallet = '0x458C8008E2415d9b012165d951fD1C80855d2233'
-  const pkMyWallet = ''
-  const contractAddr = '0x43Eac5BFEa14531B8DE0B334E123eA98325de866'
+  //! --------------------------------------------------------------------
 
-  const rpcUrl = 'https://1rpc.io/linea'
+  // const myWallet = '0x458C8008E2415d9b012165d951fD1C80855d2233'
+  // const pkMyWallet = ''
+  // const contractAddr = '0x43Eac5BFEa14531B8DE0B334E123eA98325de866'
+
+  // const rpcUrl = 'https://1rpc.io/linea'
+
+  const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId } = generalSettings
+  const { contractAddress, contractName } = contractExecSettings
+  // console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
+  // console.log('Contract parameters: ', { contractName, contractAddress })
+
   const provider = new JsonRpcProvider(rpcUrl)
-  const signer = new Wallet(pkMyWallet, provider)
+  const signer = new Wallet(senderPk, provider)
 
-  const contract = new Contract(contractAddr, CORE_ABI, provider)
+  const contract = new Contract(contractAddress, CORE_ABI, provider)
   const uAmount = BigInt(156000000000000)
 
   // const txUnsigned = await contract.supply.populateTransaction('0x9E9aec6a296f94C8530e2dD01FF3E9c61555D39a', uAmount)
@@ -146,14 +150,21 @@ const contractInteraction = async () => {
   txUnsigned2.chainId = BigInt(59144)
   txUnsigned2.gasLimit = BigInt(246156)
   txUnsigned2.gasPrice = (await provider.getFeeData()).gasPrice as bigint
-  txUnsigned2.nonce = await provider.getTransactionCount(myWallet)
+  // txUnsigned2.nonce = await provider.getTransactionCount(myWallet)
   // txUnsigned2.value = BigInt(112000027292497)
   console.log({ txUnsigned2 })
 
   await signAndExec(signer, txUnsigned2, provider)
+
+  //! --------------------------------------------------------------------
 }
 
-// approveERC20()
-// transferErc20()
-transferNative()
-// contractInteraction()
+const functionMap: { [functionName: string]: () => Promise<void> } = {
+  transferErc20,
+  transferNative,
+  nftBalance,
+  approveERC20,
+  contractInteraction
+}
+
+export default functionMap
