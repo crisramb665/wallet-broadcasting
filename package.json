@@ -6,7 +6,7 @@
     "scripts": {
         "build": "rimraf dist && tsc",
         "unbuild": "rimraf dist *.tsbuildinfo",
-        "start": "yarn build && node dist/index.js",
+        "start": "yarn build && node dist/src/index.js",
         "prettier": "prettier -w \"**/*.{ts,js}\""
     },
     "devDependencies": {

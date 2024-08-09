@@ -20,16 +20,20 @@ const transferErc20 = async () => {
   const provider = new JsonRpcProvider(rpcUrl)
   const signer = new Wallet(senderPk, provider)
 
-  const baseErc20Contract = new Contract(contractAddress, WETH_ABI, provider)
+  const baseErc20Contract = new Contract(contractAddress, ERC20_TOKEN_CONTRACT_ABI, provider)
   const balance = await baseErc20Contract.balanceOf(senderWalletAddress)
   console.log('current balance is: ', balance)
 
-  const estimatedGasLimit = await baseErc20Contract.transfer.estimateGas(receiverWalletAddress, balance)
   const txUnsigned = await baseErc20Contract.transfer.populateTransaction(receiverWalletAddress, balance)
+  txUnsigned.from = senderWalletAddress
   txUnsigned.chainId = BigInt(chainId)
-  txUnsigned.gasLimit = estimatedGasLimit
   txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
-  txUnsigned.nonce = await provider.getTransactionCount(receiverWalletAddress)
+  txUnsigned.nonce = await provider.getTransactionCount(senderWalletAddress)
+  
+  const estimatedGasLimit = await provider.estimateGas(txUnsigned)
+  txUnsigned.gasLimit = estimatedGasLimit
+  delete txUnsigned.from
+
   console.log(`tx unsigned: ${txUnsigned}`)
 
   const txSigned = await signer.signTransaction(txUnsigned)
