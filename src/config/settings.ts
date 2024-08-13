@@ -1,4 +1,6 @@
+/** npm imports */
 import dotenv from 'dotenv'
+
 dotenv.config()
 
 type GeneralSettingsType = {

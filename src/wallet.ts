@@ -10,6 +10,7 @@ import ERC721_TOKEN_CONTRACT_ABI from './ABIs/ERC721_TOKEN_CONTRACT_ABI.js'
 import ERC20_TOKEN_CONTRACT_ABI from './ABIs/ERC20_TOKEN_CONTRACT_ABI.js'
 import WETH_ABI from './ABIs/WETH_ABI.js'
 import CORE_ABI from './ABIs/CORE_ABI.js'
+import { executeSwapOnLiFI } from './customExecutions/lifi.js'
 
 const transferErc20 = async () => {
   const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId } = generalSettings
@@ -29,7 +30,7 @@ const transferErc20 = async () => {
   txUnsigned.chainId = BigInt(chainId)
   txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
   txUnsigned.nonce = await provider.getTransactionCount(senderWalletAddress)
-  
+
   const estimatedGasLimit = await provider.estimateGas(txUnsigned)
   txUnsigned.gasLimit = estimatedGasLimit
   delete txUnsigned.from
@@ -47,9 +48,9 @@ const transferErc20 = async () => {
 
 const transferNative = async () => {
   const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId } = generalSettings
-  const { contractAddress, contractName, amount } = contractExecSettings
+  const { amount } = contractExecSettings
   console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
-  console.log('Contract parameters: ', { contractName, contractAddress, amount })
+  console.log('Contract parameters: ', { amount })
 
   const processedAmount = parseEther(amount)
 
@@ -58,6 +59,8 @@ const transferNative = async () => {
 
   const balance = await provider.getBalance(senderWalletAddress)
   console.log('current balance is: ', balance)
+
+  if (processedAmount > balance) throw new Error('Not enough native balance on Sender')
 
   const tx = await signer.sendTransaction({
     to: receiverWalletAddress,
@@ -135,7 +138,17 @@ const contractInteraction = async () => {
   const signer = new Wallet(senderPk, provider)
 
   const contract = new Contract(contractAddress, CORE_ABI, provider)
-  const uAmount = BigInt(156000000000000)
+  const uAmount = BigInt(156000000000)
+
+  await executeSwapOnLiFI({
+    fromAddress: signer.address,
+    toAddress: signer.address,
+    fromAmount: uAmount.toString(),
+    fromChain: Number(chainId),
+    toChain: 137,
+    fromToken: contractAddress,
+    toToken: '0x0000000000000000000000000000000000000000'
+  })
 
   // const txUnsigned = await contract.supply.populateTransaction('0x9E9aec6a296f94C8530e2dD01FF3E9c61555D39a', uAmount)
   // txUnsigned.chainId = BigInt(59144)
@@ -147,18 +160,18 @@ const contractInteraction = async () => {
 
   // await signAndExec(signer, txUnsigned, provider)
 
-  const txUnsigned2 = await contract.redeemUnderlying.populateTransaction(
-    '0x9E9aec6a296f94C8530e2dD01FF3E9c61555D39a',
-    BigInt(136880429037865)
-  )
-  txUnsigned2.chainId = BigInt(59144)
-  txUnsigned2.gasLimit = BigInt(246156)
-  txUnsigned2.gasPrice = (await provider.getFeeData()).gasPrice as bigint
-  // txUnsigned2.nonce = await provider.getTransactionCount(myWallet)
-  // txUnsigned2.value = BigInt(112000027292497)
-  console.log({ txUnsigned2 })
+  // const txUnsigned2 = await contract.redeemUnderlying.populateTransaction(
+  //   '0x9E9aec6a296f94C8530e2dD01FF3E9c61555D39a',
+  //   BigInt(136880429037865)
+  // )
+  // txUnsigned2.chainId = BigInt(59144)
+  // txUnsigned2.gasLimit = BigInt(246156)
+  // txUnsigned2.gasPrice = (await provider.getFeeData()).gasPrice as bigint
+  // // txUnsigned2.nonce = await provider.getTransactionCount(myWallet)
+  // // txUnsigned2.value = BigInt(112000027292497)
+  // console.log({ txUnsigned2 })
 
-  await signAndExec(signer, txUnsigned2, provider)
+  // await signAndExec(signer, txUnsigned2, provider)
 
   //! --------------------------------------------------------------------
 }

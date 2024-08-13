@@ -1,12 +1,13 @@
 {
     "dependencies": {
+        "@lifi/sdk": "^3.1.5",
         "ethers": "6.6.4"
     },
     "type": "module",
     "scripts": {
         "build": "rimraf dist && tsc",
         "unbuild": "rimraf dist *.tsbuildinfo",
-        "start": "yarn build && node dist/src/index.js",
+        "start": "yarn build && node dist/index.js",
         "prettier": "prettier -w \"**/*.{ts,js}\""
     },
     "devDependencies": {
