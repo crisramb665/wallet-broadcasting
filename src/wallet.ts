@@ -1,5 +1,6 @@
 /** npm imports */
-import { ethers, Contract, JsonRpcProvider, Wallet, parseEther } from 'ethers'
+import { ethers, Contract, JsonRpcProvider, Wallet, parseEther, parseUnits } from 'ethers'
+import JSONBig from 'json-bigint'
 
 /** local imports */
 import { generalSettings, contractExecSettings } from './config/settings.js'
@@ -14,7 +15,7 @@ import { executeSwapOnLiFI } from './customExecutions/lifi.js'
 
 const transferErc20 = async () => {
   const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId } = generalSettings
-  const { contractAddress, contractName } = contractExecSettings
+  const { contractAddress, contractName, amount } = contractExecSettings
   console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
   console.log('Contract parameters: ', { contractName, contractAddress })
 
@@ -24,8 +25,14 @@ const transferErc20 = async () => {
   const baseErc20Contract = new Contract(contractAddress, ERC20_TOKEN_CONTRACT_ABI, provider)
   const balance = await baseErc20Contract.balanceOf(senderWalletAddress)
   console.log('current balance is: ', balance)
+  const decimals = await baseErc20Contract.decimals()
+  const amountToTransfer = parseUnits(amount, decimals)
+  console.log('Amount to transfer: ', amountToTransfer)
 
-  const txUnsigned = await baseErc20Contract.transfer.populateTransaction(receiverWalletAddress, balance)
+  if (amountToTransfer > balance) throw new Error('Amount to transfer is greater than current balance on Sender')
+
+  const txUnsigned = await baseErc20Contract.transfer.populateTransaction(receiverWalletAddress, amountToTransfer)
+  console.log('data tx Unsigned matters: ', txUnsigned.data)
   txUnsigned.from = senderWalletAddress
   txUnsigned.chainId = BigInt(chainId)
   txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
@@ -35,15 +42,15 @@ const transferErc20 = async () => {
   txUnsigned.gasLimit = estimatedGasLimit
   delete txUnsigned.from
 
-  console.log(`tx unsigned: ${txUnsigned}`)
+  console.log(JSONBig.stringify({ txUnsigned }))
 
   const txSigned = await signer.signTransaction(txUnsigned)
-  console.log(`tx signed: ${txSigned}`)
+  console.log(JSONBig.stringify({ txSigned }))
   const submittedTx = await provider.broadcastTransaction(txSigned)
 
   const receipt = await submittedTx.wait()
   const txHash = ethers.keccak256(txSigned)
-  console.log(`The txHash is ${txHash} and the receipt is: ${receipt}`)
+  console.log(`The txHash is ${txHash} and the receipt is: ${JSONBig.stringify({ receipt })}`)
 }
 
 const transferNative = async () => {
@@ -67,7 +74,10 @@ const transferNative = async () => {
     value: processedAmount
   })
 
+  const receipt = await tx.wait(2)
+
   console.log('hash', tx.hash)
+  console.log(JSONBig.stringify({ receipt }))
 }
 
 const nftBalance = async () => {
@@ -84,12 +94,12 @@ const nftBalance = async () => {
 }
 
 const approveERC20 = async () => {
-  const { senderWalletAddress, receiverWalletAddress, senderPk, rpcUrl, chainId, spenderAddress } = generalSettings
+  const { senderWalletAddress, senderPk, rpcUrl, chainId, spenderAddress } = generalSettings
   if (!spenderAddress) throw new Error('No spender address provided')
 
   const { contractAddress, contractName } = contractExecSettings
-  console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
-  console.log('Contract parameters: ', { contractName, contractAddress })
+  // console.log('General parameters: ', { senderWalletAddress, receiverWalletAddress, chainId })
+  // console.log('Contract parameters: ', { contractName, contractAddress })
 
   const provider = new JsonRpcProvider(rpcUrl)
   const signer = new Wallet(senderPk, provider)
@@ -103,8 +113,8 @@ const approveERC20 = async () => {
 
   const txUnsigned = await token.approve.populateTransaction(spenderAddress, balance)
   txUnsigned.chainId = BigInt(chainId)
-  txUnsigned.gasLimit = BigInt(30000)
-  txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
+  txUnsigned.gasLimit = BigInt(120000)
+  txUnsigned.gasPrice = (await provider.getFeeData()).maxFeePerGas as bigint
   txUnsigned.nonce = await provider.getTransactionCount(senderWalletAddress)
   console.log({ txUnsigned })
 

@@ -1,16 +1,18 @@
 {
     "dependencies": {
         "@lifi/sdk": "^3.1.5",
-        "ethers": "6.6.4"
+        "ethers": "6.6.4",
+        "json-bigint": "^1.0.0"
     },
     "type": "module",
     "scripts": {
-        "build": "rimraf dist && tsc",
-        "unbuild": "rimraf dist *.tsbuildinfo",
+        "build": "rm -rf dist && tsc",
+        "unbuild": "rm -rf dist *.tsbuildinfo",
         "start": "yarn build && node dist/index.js",
         "prettier": "prettier -w \"**/*.{ts,js}\""
     },
     "devDependencies": {
+        "@types/json-bigint": "^1.0.4",
         "@types/node": "^20.12.7",
         "@typescript-eslint/eslint-plugin": "^5.38.1",
         "dotenv": "^16.4.5",
