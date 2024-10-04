@@ -1,5 +1,14 @@
 /** npm imports */
-import { ethers, Contract, JsonRpcProvider, Wallet, parseEther, parseUnits } from 'ethers'
+import {
+  ethers,
+  Contract,
+  ContractTransaction,
+  JsonRpcProvider,
+  Wallet,
+  parseEther,
+  parseUnits,
+  formatEther
+} from 'ethers'
 import JSONBig from 'json-bigint'
 
 /** local imports */
@@ -42,15 +51,16 @@ const transferErc20 = async () => {
   txUnsigned.gasLimit = estimatedGasLimit
   delete txUnsigned.from
 
-  console.log(JSONBig.stringify({ txUnsigned }))
+  console.log(JSONBig.stringify({ txUnsigned }, null, 2))
 
   const txSigned = await signer.signTransaction(txUnsigned)
-  console.log(JSONBig.stringify({ txSigned }))
+
+  console.log(JSONBig.stringify({ txSigned }, null, 2))
   const submittedTx = await provider.broadcastTransaction(txSigned)
 
   const receipt = await submittedTx.wait()
   const txHash = ethers.keccak256(txSigned)
-  console.log(`The txHash is ${txHash} and the receipt is: ${JSONBig.stringify({ receipt })}`)
+  console.log(`The txHash is ${txHash} and the receipt is: ${JSONBig.stringify({ receipt }, null, 2)}`)
 }
 
 const transferNative = async () => {
@@ -77,7 +87,7 @@ const transferNative = async () => {
   const receipt = await tx.wait(2)
 
   console.log('hash', tx.hash)
-  console.log(JSONBig.stringify({ receipt }))
+  console.log(JSONBig.stringify({ receipt }, null, 2))
 }
 
 const nftBalance = async () => {
@@ -147,26 +157,70 @@ const contractInteraction = async () => {
   const provider = new JsonRpcProvider(rpcUrl)
   const signer = new Wallet(senderPk, provider)
 
-  const contract = new Contract(contractAddress, CORE_ABI, provider)
-  const uAmount = BigInt(156000000000)
+  // const contract = new Contract(contractAddress, CORE_ABI, provider)
+  // const uAmount = BigInt(156000000000)
 
-  await executeSwapOnLiFI({
-    fromAddress: signer.address,
-    toAddress: signer.address,
-    fromAmount: uAmount.toString(),
-    fromChain: Number(chainId),
-    toChain: 137,
-    fromToken: contractAddress,
-    toToken: '0x0000000000000000000000000000000000000000'
-  })
+  const wrappedTokenGatewayContract = new Contract(
+    '0x5d50bE703836C330Fc2d147a631CDd7bb8D7171c',
+    [
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: '',
+            type: 'address'
+          },
+          {
+            internalType: 'uint256',
+            name: 'amount',
+            type: 'uint256'
+          },
+          {
+            internalType: 'address',
+            name: 'to',
+            type: 'address'
+          }
+        ],
+        name: 'withdrawETH',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function'
+      }
+    ],
+    provider
+  )
+
+  // unsignedTx = await wrappedTokenGatewayContract.withdrawETH.populateTransaction(pool, amount, walletAddress)
+
+  // await executeSwapOnLiFI({
+  //   fromAddress: signer.address,
+  //   toAddress: signer.address,
+  //   fromAmount: uAmount.toString(),
+  //   fromChain: Number(chainId),
+  //   toChain: 137,
+  //   fromToken: contractAddress,
+  //   toToken: '0x0000000000000000000000000000000000000000'
+  // })
 
   // const txUnsigned = await contract.supply.populateTransaction('0x9E9aec6a296f94C8530e2dD01FF3E9c61555D39a', uAmount)
-  // txUnsigned.chainId = BigInt(59144)
-  // txUnsigned.gasLimit = BigInt(246156)
-  // txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
-  // txUnsigned.nonce = await provider.getTransactionCount(myWallet)
-  // txUnsigned.value = uAmount
-  // console.log({ txUnsigned })
+  const callStaticTest = await wrappedTokenGatewayContract.withdrawETH.staticCall(
+    '0x2f9bB73a8e98793e26Cb2F6C4ad037BDf1C6B269',
+    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+    senderWalletAddress
+  )
+  console.log({ callStaticTest })
+
+  const txUnsigned = await wrappedTokenGatewayContract.withdrawETH.populateTransaction(
+    '0x2f9bB73a8e98793e26Cb2F6C4ad037BDf1C6B269',
+    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+    senderWalletAddress
+  )
+  txUnsigned.chainId = BigInt(59144)
+  txUnsigned.gasLimit = BigInt(100000)
+  txUnsigned.gasPrice = (await provider.getFeeData()).gasPrice as bigint
+  txUnsigned.nonce = await provider.getTransactionCount(senderWalletAddress)
+  // txUnsigned.value = parseEther('0.00002854871499936')
+  console.log({ txUnsigned }, txUnsigned.data)
 
   // await signAndExec(signer, txUnsigned, provider)
 
@@ -183,6 +237,16 @@ const contractInteraction = async () => {
 
   // await signAndExec(signer, txUnsigned2, provider)
 
+  const txSigned = await signer.signTransaction(txUnsigned)
+  console.log({ txSigned })
+  const submittedTx = await provider.broadcastTransaction(txSigned)
+
+  const receipt = await submittedTx.wait()
+  const txHash = ethers.keccak256(txSigned)
+
+  console.log({ txHash, receipt })
+
+  // return { txHash, receipt }
   //! --------------------------------------------------------------------
 }
 
