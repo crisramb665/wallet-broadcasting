@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
+type ChainsSettingsType = Record<string, { rpcUrl: string; chainId: string }>
+
 type GeneralSettingsType = {
   senderWalletAddress: string
   receiverWalletAddress: string
@@ -19,12 +21,31 @@ type ContractExecSettings = {
   methodName: string
 }
 
+export const chainsSettings: ChainsSettingsType = {
+  '8453': {
+    rpcUrl: process.env.RPC_URL_BASE || '',
+    chainId: process.env.CHAIN_ID || '8453'
+  },
+  '59144': {
+    rpcUrl: process.env.RPC_URL_LINEA || '',
+    chainId: process.env.CHAIN_ID || '59144'
+  },
+  '81457': {
+    rpcUrl: process.env.RPC_URL_BLAST || '',
+    chainId: process.env.CHAIN_ID || '81457'
+  },
+  '534352': {
+    rpcUrl: process.env.RPC_URL_SCROLL || 'https://rpc.scroll.io',
+    chainId: process.env.CHAIN_ID || '534352'
+  }
+}
+
 export const generalSettings: GeneralSettingsType = {
   senderWalletAddress: process.env.SENDER_WALLET_ADDRESS || '',
   receiverWalletAddress: process.env.RECEIVER_WALLET_ADDRESS || '',
   senderPk: process.env.SENDER_PK || '',
-  rpcUrl: process.env.RPC_URL || '',
-  chainId: process.env.CHAIN_ID || '',
+  rpcUrl: chainsSettings[process.env.CHAIN_ID || ''].rpcUrl,
+  chainId: chainsSettings[process.env.CHAIN_ID || ''].chainId,
   spenderAddress: process.env.SPENDER_ADDRESS
 }
 
