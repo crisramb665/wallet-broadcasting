@@ -37,6 +37,10 @@ export const chainsSettings: ChainsSettingsType = {
   '534352': {
     rpcUrl: process.env.RPC_URL_SCROLL || 'https://rpc.scroll.io',
     chainId: process.env.CHAIN_ID || '534352'
+  },
+  '137': {
+    rpcUrl: process.env.RPC_URL_POLYGON || '',
+    chainId: process.env.CHAIN_ID || '137'
   }
 }
 

@@ -48,7 +48,7 @@ const transferErc20 = async () => {
   txUnsigned.maxFeePerGas = ((await provider.getFeeData()).maxFeePerGas as bigint) * (BigInt(3) / BigInt(2))
   txUnsigned.maxPriorityFeePerGas =
     ((await provider.getFeeData()).maxPriorityFeePerGas as bigint) * (BigInt(3) / BigInt(2))
-  txUnsigned.nonce = (await provider.getTransactionCount(senderWalletAddress))
+  txUnsigned.nonce = await provider.getTransactionCount(senderWalletAddress)
 
   const estimatedGasLimit = await provider.estimateGas(txUnsigned)
   txUnsigned.gasLimit = estimatedGasLimit
