@@ -41,6 +41,10 @@ export const chainsSettings: ChainsSettingsType = {
   '137': {
     rpcUrl: process.env.RPC_URL_POLYGON || '',
     chainId: process.env.CHAIN_ID || '137'
+  },
+  '42161': {
+    rpcUrl: process.env.RPC_URL_ARB || 'https://arbitrum.llamarpc.com',
+    chainId: process.env.CHAIN_ID || '42161'
   }
 }
 
