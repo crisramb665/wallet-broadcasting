@@ -1,6 +1,7 @@
 {
     "dependencies": {
         "@lifi/sdk": "^3.1.5",
+        "axios": "^1.13.2",
         "ethers": "6.6.4",
         "json-bigint": "^1.0.0"
     },
@@ -9,7 +10,8 @@
         "build": "rm -rf dist && tsc",
         "unbuild": "rm -rf dist *.tsbuildinfo",
         "start": "yarn build && node dist/index.js",
-        "prettier": "prettier -w \"**/*.{ts,js}\""
+        "prettier": "prettier -w \"**/*.{ts,js}\"",
+        "sign": "yarn build && node dist/sign.js"
     },
     "devDependencies": {
         "@types/json-bigint": "^1.0.4",

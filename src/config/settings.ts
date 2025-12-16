@@ -63,3 +63,9 @@ export const contractExecSettings: ContractExecSettings = {
   amount: process.env.AMOUNT || '',
   methodName: process.env.METHOD_NAME || ''
 }
+
+export const signSettings = {
+  walletSignerAddress: process.env.WALLET_SIGNER_ADDRESS || '',
+  walletSignerPk: process.env.WALLET_SIGNER_PK || '',
+  backendUrl: process.env.BACKEND_URL || ''
+}
